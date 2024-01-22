@@ -3,6 +3,7 @@ import {
   Controller,
   FileTypeValidator,
   Get,
+  HttpException,
   MaxFileSizeValidator,
   ParseFilePipe,
   Post,
@@ -17,6 +18,8 @@ import {
   FileInterceptor,
   FilesInterceptor,
 } from '@nestjs/platform-express';
+import { storage } from './my-file-storage';
+import { MyFileValidator } from './MyFileValidator';
 
 @Controller()
 export class AppController {
@@ -33,7 +36,7 @@ export class AppController {
       dest: 'uploads',
     }),
   )
-  uploadFile3(
+  uploadFile(
     @UploadedFile(
       new ParseFilePipe({
         validators: [
@@ -87,7 +90,8 @@ export class AppController {
   @Post('ddd')
   @UseInterceptors(
     AnyFilesInterceptor({
-      dest: 'uploads',
+      // dest: 'uploads',
+      storage: storage,
     }),
   )
   uploadAnyFiles(
@@ -96,5 +100,66 @@ export class AppController {
   ) {
     console.log('body', body);
     console.log('files', files);
+  }
+
+  @Post('eee')
+  @UseInterceptors(
+    AnyFilesInterceptor({
+      dest: 'uploads',
+    }),
+  )
+  uploadAnyFile2(
+    @UploadedFiles() files: Array<Express.Multer.File>,
+    @Body() body,
+  ) {
+    console.log('body', body);
+    console.log('files', files);
+  }
+
+  @Post('fff')
+  @UseInterceptors(
+    FileInterceptor('aaa', {
+      dest: 'uploads',
+    }),
+  )
+  uploadFile3(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 1000 }),
+          new FileTypeValidator({ fileType: 'image/jpeg' }),
+        ],
+        exceptionFactory: (err: string) => {
+          throw new HttpException('xxx' + err, 404);
+        },
+      }),
+    )
+    file: Express.Multer.File,
+    @Body() body,
+  ): void {
+    console.log('body', body);
+    console.log('file', file);
+  }
+
+  @Post('hhh')
+  @UseInterceptors(
+    FileInterceptor('aaa', {
+      dest: 'uploads',
+    }),
+  )
+  uploadFile4(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [new MyFileValidator({})],
+        exceptionFactory: (err: string) => {
+          throw new HttpException('xxx' + err, 404);
+        },
+      }),
+    )
+    file: Express.Multer.File,
+    @Body() body,
+  ): void {
+    console.log('body', body);
+    console.log('file', file);
   }
 }
